@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./popup.css" />
+  </head>
+  <body>
+    <template id="window_template">
+      <li class="window">
+        <p class="window-title">Number of tabs</p>
+        <ul class="window-tabs"></ul>
+      </li>
+    </template>
+
+    <template id="tab_template">
+      <li class="tab">
+        <img class="tab-icon" src='https://github.githubassets.com/favicons/favicon.svg'>
+        <p class="tab-title">Tab Title</p>
+      </li>
+    </template>
+
+    <!-- <h1>Google Dev Docs</h1> -->
+    <!-- <button>Group Tabs</button> -->
+    <ul class="windows"></ul>
+    <div class="w3-bar w3-black">
+      <button class="w3-bar-item w3-button" onclick="openCity('London')">London</button>
+      <button class="w3-bar-item w3-button" onclick="openCity('Paris')">Paris</button>
+      <button class="w3-bar-item w3-button" onclick="openCity('Tokyo')">Tokyo</button>
+    </div>
+    <script src="./popup.js" type="module"></script>
+  </body>
+</html>

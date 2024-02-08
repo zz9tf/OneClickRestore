@@ -1,0 +1,41 @@
+body {
+    width: 20rem;
+  }
+  
+ul.windows {
+  display: flex;
+  flex-direction: column;
+  padding-inline-start: 0px;
+}
+ 
+/* tamplate window */
+li.window {
+  display: flex;
+  flex-direction: column;
+}
+
+p.window-title {
+  margin: 0px;
+}
+
+ul.window-tabs {
+  padding-inline-start: 0px;
+}
+
+/* tamplate tab */
+li.tab {
+  display: flex;
+  flex-direction: row;
+  align-items: center; 
+}
+
+img.tab-icon {
+  height: 12px;
+  width: 12px;
+  margin: 5px;
+  margin-left: 10px;
+}
+
+p.tab-title {
+  margin: 0px;
+}
