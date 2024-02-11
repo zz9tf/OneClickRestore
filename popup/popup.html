@@ -23,12 +23,16 @@
 
     <!-- <h1>Google Dev Docs</h1> -->
     <!-- <button>Group Tabs</button> -->
-    <ul class="windows"></ul>
-    <div class="w3-bar w3-black">
-      <button class="w3-bar-item w3-button" onclick="openCity('London')">London</button>
-      <button class="w3-bar-item w3-button" onclick="openCity('Paris')">Paris</button>
-      <button class="w3-bar-item w3-button" onclick="openCity('Tokyo')">Tokyo</button>
+    <div class="button-area">
+      <button class="clear-button">Clear</button>
+      <!-- <button class="Login-button" onclick="openCity('London')">Login</button> -->
+      <div class="restore-toggle">
+        <p class="restore-toggle-tag">restore mode</p>
+        <div class="restore-toggle-button"></div>
+      </div>
+      
     </div>
+    <ul class="windows"></ul>
     <script src="./popup.js" type="module"></script>
   </body>
 </html>

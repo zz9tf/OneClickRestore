@@ -7,7 +7,59 @@ ul.windows {
   flex-direction: column;
   padding-inline-start: 0px;
 }
- 
+
+div.button-area {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+div.restore-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+p.restore-toggle-tag {
+  margin-block-start: 0px;
+  margin-block-end: 0px;
+}
+
+div.restore-toggle-button {
+  position: relative;
+  height: 22px;
+  width: 40px;
+  margin: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  background-color: white;
+  /* box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1); */
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+div.restore-toggle-button::before {
+  content: "";
+  position: absolute;
+  height: 16px;
+  width: 16px;
+  background-color: black;
+  border-radius: 50%;
+  top: 50%;
+  left: 3px;
+  transform: translateY(-50%);
+  transition: all 0.3s ease-in-out;
+}
+
+div.restore-toggle-button.active::before {
+  left: calc(100% - 16px - 3px);
+}
+
+div.restore-toggle-button.active {
+  background-color: greenyellow;
+}
+
+
 /* tamplate window */
 li.window {
   display: flex;
@@ -27,6 +79,11 @@ li.tab {
   display: flex;
   flex-direction: row;
   align-items: center; 
+  cursor: pointer;
+}
+
+li.tab:hover {
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 img.tab-icon {
