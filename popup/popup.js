@@ -31,8 +31,9 @@ function logTabs(windowArray) {
       win_elem.addEventListener('click', tabRestoreHandler);
     }
     document.querySelector(".windows").append(win_elem);
+    windowId--;
   }
-  windowId--;
+  
 }
 
 function onError(error) {
@@ -61,8 +62,6 @@ if (is_restore_mode == null) {
   console.log(is_restore_mode);
 }
 
-console.log("here");
-
 if (is_restore_mode) {
   let history = await readFromStorage("history");
   if (history == null) {
@@ -77,7 +76,9 @@ if (is_restore_mode) {
 // Event handlers
 clear.addEventListener("click", clearHandler);
 toggle.addEventListener("click", toggleHandler);
-chrome.storage.onChanged.addListener(historyUpdateHandler);
+// Set up port between popup and service_worker
+const port = chrome.runtime.connect({ name: "popup" });
+port.onMessage.addListener(updateHandler);
 
 async function clearHandler() {
   if (is_restore_mode) {
@@ -106,25 +107,15 @@ async function toggleHandler() {
     .catch(onError);
 }
 
-async function historyUpdateHandler() {
-  chrome.storage.onChanged.addListener(async (changes, _) => {
-    if ("history" in changes && is_restore_mode) {
-      console.log("history changed");
-      if (history == null) {
-        history = [];
-      }
-      if (is_restore_mode) {
-        let history = await readFromStorage("history");
-        logTabs(history);
-      }
-    }
-    if ("urls" in changes && !is_restore_mode) {
-      console.log("urls changed");
-      chrome.windows
-          .getAll({ populate: true })
-          .then(logTabs, onError);
-    }
-  });
+function updateHandler(message) {
+  console.log(message);
+  if (message.operation == "updateHistory" && is_restore_mode) {
+    console.log("history changed")
+    logTabs(message.data);
+  } else if (message.operation == "updateUrls" && !is_restore_mode) {
+    console.log("urls changed");
+    chrome.windows.getAll({ populate: true }).then(logTabs, onError);
+  }
 }
 
 async function tabRestoreHandler(event) {

@@ -1,3 +1,7 @@
+// Initialize varables
+var mutex = false;
+var popup_port = undefined;
+
 async function getCurrentUrls() {
   return new Promise((resolve, reject) => {
     let urls = {};
@@ -59,8 +63,6 @@ async function writeToStorage(key, data) {
   });
 }
 
-var mutex = false;
-
 chrome.runtime.onInstalled.addListener(initAndCreatedAndUpdateEventHandler);
 
 // Listen for when a window is created or removed
@@ -78,6 +80,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
+// Listen for popup closed
+chrome.runtime.onConnect.addListener(function(port) {
+  if (port.name === "popup") {
+    console.log("popup connected");
+    popup_port = port;
+    port.onDisconnect.addListener(function() {
+      console.log("popup disconnected");
+      popup_port = undefined;
+    });
+  }
+});
+
 
 async function initAndCreatedAndUpdateEventHandler() {
   console.log("windows onCreated event happened");
@@ -88,6 +102,9 @@ async function initAndCreatedAndUpdateEventHandler() {
   mutex = true;
   await writeToStorage("urls", urls);
   await writeToStorage("windowId2TabId", windowId2TabId);
+  if (popup_port != undefined) {
+    popup_port.postMessage({operation: "updateUrls"});
+  }
   mutex = false;
 }
 
@@ -135,6 +152,15 @@ async function storeClosedTabURL(tabId, removeInfo) {
   // Update my recording
   await writeToStorage("urls", urls);
   await writeToStorage("windowId2TabId", windowId2TabId);
+
+  let is_restore_mode = readFromStorage("mode")
+  if (popup_port != undefined) {
+    if (is_restore_mode) {
+      popup_port.postMessage({operation: "updateHistory", data: history});
+    } else {
+      popup_port.postMessage({operation: "updateUrls"});
+    }
+  }
   mutex = false;
 }
 
@@ -160,6 +186,14 @@ async function storeClosedWindow(windowId) {
   // Update my recording
   await writeToStorage("urls", urls);
   await writeToStorage("windowId2TabId", windowId2TabId);
+  let is_restore_mode = readFromStorage("mode")
+  if (popup_port != undefined) {
+    if (is_restore_mode) {
+      popup_port.postMessage({operation: "updateHistory", data: history});
+    } else {
+      popup_port.postMessage({operation: "updateUrls"});
+    }
+  }
   mutex = false;
 }
 
@@ -168,18 +202,15 @@ async function handlePopupOperation(message) {
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
   mutex = true;
-  // 2. A page requested user data, respond with a copy of `user`
   if (message[0] === 'readFromStorage') {
     const response = await readFromStorage(message[1]);
     mutex = false;
     return response;
   } else if (message[0] === 'writeToStorage') {
-    console.log("write to storage");
-    console.log(message);
-    await writeToStorage(message[1], message[2])
-    const storageData = await readFromStorage(message[1]);
-    console.log("storagedData");
-    console.log([message[1], storageData]);
+    await writeToStorage(message[1], message[2]);
+    if (popup_port != undefined && message[1] == 'history') {
+      popup_port.postMessage({operation: "updateHistory", data: message[2]});
+    }
     mutex = false;
     return true;
   }
