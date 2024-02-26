@@ -8,8 +8,12 @@ function logTabs(windowArray) {
     windowArray = windowArray.reverse();
   }
   for (let window of windowArray) {
+    var date = undefined;
     if (!is_restore_mode) {
       window = window.tabs;
+    } else {
+      date = window.date;
+      window = window.urls;
     }
     const win_elem = window_tamplate.content.firstElementChild.cloneNode(true);
     win_elem.querySelector(".window-title").textContent = window.length + " tabs";
@@ -124,11 +128,11 @@ async function tabRestoreHandler(event) {
   if (tabElement) {
     const urlId = JSON.parse(tabElement.getAttribute('id'));
     let history = await readFromStorage("history");
-    const tab = history[urlId.windowId][urlId.tabId];
-    if (history[urlId.windowId].length == 1) {
+    const tab = history[urlId.windowId].urls[urlId.tabId];
+    if (history[urlId.windowId].urls.length == 1) {
       history.splice(urlId.windowId, 1);
     } else {
-      history[urlId.windowId].splice(urlId.tabId, 1);
+      history[urlId.windowId].urls.splice(urlId.tabId, 1);
     }
     await writeToStorage("history", history);
     chrome.tabs.create({active: false, url: tab.url});
