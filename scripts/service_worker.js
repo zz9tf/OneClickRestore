@@ -229,7 +229,7 @@ async function storeClosedTabURL(tabId, removeInfo) {
   }
   console.log("storeClosedTabURL");
   const { urls, _ } = await getCurrentUrls();
-  mutexWrapper(async () => {
+  await mutexWrapper(async () => {
     const storedUrls = await readFromStorage("urls");
     checkStoreClosedTabURLIsValid(tabId, storedUrls, urls);
     await updateData([storedUrls[tabId]]);
@@ -276,7 +276,7 @@ async function storeClosedWindow(windowId) {
     console.log("not changed urls");
     return;
   }
-  mutexWrapper(async () => {
+  await mutexWrapper(async () => {
     let windowTabs = [];
     for (const i in storedWindowId2TabId[windowId]) {
       windowTabs.push(storedUrls[storedWindowId2TabId[windowId][i]]);
@@ -287,13 +287,13 @@ async function storeClosedWindow(windowId) {
 
 async function handlePopupOperation(message) {
   if (message[0] === "readFromStorage") {
-    const response = mutexWrapper(async () => {
+    const response = await mutexWrapper(async () => {
       const response = await readFromStorage(message[1]);
       return response;
     });
     return response;
   } else if (message[0] === "writeToStorage") {
-    mutexWrapper(async () => {
+    await mutexWrapper(async () => {
       await writeToStorage(message[1], message[2]);
       if (popup_port != undefined && message[1] == "history") {
         popup_port.postMessage({
