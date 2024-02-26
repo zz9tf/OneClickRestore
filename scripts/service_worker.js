@@ -1,7 +1,6 @@
-// Function to update the urls dictionary
 async function getCurrentUrls() {
   return new Promise((resolve, reject) => {
-    let urls = {}; // {tab.id : tabinfo}
+    let urls = {};
     let windowId2TabId = {}; // {windowId : [...tab.id]}
     // Query all windows
     chrome.windows.getAll({ populate: true }, function (windows) {
@@ -60,99 +59,69 @@ async function writeToStorage(key, data) {
   });
 }
 
-let storageLock = false;
-chrome.runtime.onInstalled.addListener(initializationStorage);
+var mutex = false;
+
+chrome.runtime.onInstalled.addListener(initAndCreatedAndUpdateEventHandler);
 
 // Listen for when a window is created or removed
-chrome.windows.onCreated.addListener(windowsOnCreatedEventHandler);
+chrome.windows.onCreated.addListener(initAndCreatedAndUpdateEventHandler);
 chrome.windows.onRemoved.addListener(storeClosedWindow);
 
 // Listen for when a tab is created, updated, or removed
-chrome.tabs.onCreated.addListener(tabsOnCreatedEventHandler);
-chrome.tabs.onUpdated.addListener(tabsOnUpdatedEventHandler);
+chrome.tabs.onCreated.addListener(initAndCreatedAndUpdateEventHandler);
+chrome.tabs.onUpdated.addListener(initAndCreatedAndUpdateEventHandler);
 chrome.tabs.onRemoved.addListener(storeClosedTabURL);
 
-async function initializationStorage() {
+// Listen for popup operations
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  handlePopupOperation(message).then(sendResponse);
+  return true;
+});
+
+
+async function initAndCreatedAndUpdateEventHandler() {
+  console.log("windows onCreated event happened");
   let { urls, windowId2TabId } = await getCurrentUrls();
+  while (mutex == true) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  mutex = true;
   await writeToStorage("urls", urls);
   await writeToStorage("windowId2TabId", windowId2TabId);
-}
-
-async function windowsOnCreatedEventHandler() {
-  console.log("windows onCreated event happened");
-  while (storageLock) {
-    await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for 100ms before retrying
-  }
-  storageLock = true;
-  try {
-    let { urls, windowId2TabId } = await getCurrentUrls();
-    await writeToStorage("urls", urls);
-    await writeToStorage("windowId2TabId", windowId2TabId);
-  } catch (error) {
-    console.error("Error updating URLs:", error);
-  } finally {
-    storageLock = false;
-  }
-}
-
-async function tabsOnCreatedEventHandler() {
-  console.log("tabs onCreated event happened");
-  while (storageLock) {
-    await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for 100ms before retrying
-  }
-  storageLock = true;
-  try {
-    let { urls, windowId2TabId } = await getCurrentUrls();
-    await writeToStorage("urls", urls);
-    await writeToStorage("windowId2TabId", windowId2TabId);
-  } catch (error) {
-    console.error("Error updating URLs:", error);
-  } finally {
-    storageLock = false;
-  }
-}
-
-async function tabsOnUpdatedEventHandler() {
-  console.log("tabs onUpdated event happened");
-  while (storageLock) {
-    await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for 100ms before retrying
-  }
-  storageLock = true;
-  try {
-    let { urls, windowId2TabId } = await getCurrentUrls();
-    await writeToStorage("urls", urls);
-    await writeToStorage("windowId2TabId", windowId2TabId);
-  } catch (error) {
-    console.error("Error updating URLs:", error);
-  } finally {
-    storageLock = false;
-  }
+  mutex = false;
 }
 
 async function storeClosedTabURL(tabId, removeInfo) {
-  console.log("storeClosedTabURL");
   if (removeInfo.isWindowClosing) {
     return;
   }
+  console.log("storeClosedTabURL");
   const { urls, windowId2TabId } = await getCurrentUrls();
-  while (storageLock) {
-    await new Promise((resolve) => setTimeout(resolve, 10)); // Wait for 10ms before retrying
+  while (mutex == true) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
   }
-  storageLock = true;
+  mutex = true;
   const storedUrls = await readFromStorage("urls");
   // Check if the length of current urls has 1 more tab than stored urls.
   if (Object.keys(storedUrls).length != Object.keys(urls).length + 1) {
+    // Get an array of current urls' titles
+    const currentTitles = Object.entries(urls).map(([key, value]) => value.title).join("\n");
+
+    // Get an array of stored urls' titles
+    const storedTitles = Object.entries(storedUrls).map(([key, value]) => value.title).join("\n");
     throw new Error(
       "Invalid history update since the number of current urls is not correct.\n" +
         "current urls: " +
         Object.keys(urls).length +
         "\n" +
-        JSON.stringify(urls) +
+        currentTitles +
+        "\n\n" +
+        "Try to close the tab: " + storedUrls[tabId].title + 
         "\n\n" +
         " stored urls:" +
         Object.keys(storedUrls).length +
         "\n" +
-        JSON.stringify(storedUrls)
+        storedTitles
     );
   }
   // store the closed url into the history
@@ -166,24 +135,18 @@ async function storeClosedTabURL(tabId, removeInfo) {
   // Update my recording
   await writeToStorage("urls", urls);
   await writeToStorage("windowId2TabId", windowId2TabId);
-  storageLock = false;
+  mutex = false;
 }
 
 async function storeClosedWindow(windowId) {
   console.log("storeClosedWindow");
   const { urls, windowId2TabId } = await getCurrentUrls();
-  while (storageLock) {
-    await new Promise((resolve) => setTimeout(resolve, 10)); // Wait for 100ms before retrying
+  while (mutex == true) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
   }
-  storageLock = true;
+  mutex = true;
   const storedUrls = await readFromStorage("urls");
-  if (Object.keys(urls).length == Object.keys(storedUrls).length) {
-    storageLock = false;
-    return;
-  }
   const storedWindowId2TabId = await readFromStorage("windowId2TabId");
-  console.log(storedWindowId2TabId);
-  console.log(storedUrls);
   let windowTabs = [];
   for (const i in storedWindowId2TabId[windowId]) {
     windowTabs.push(storedUrls[storedWindowId2TabId[windowId][i]]);
@@ -197,5 +160,29 @@ async function storeClosedWindow(windowId) {
   // Update my recording
   await writeToStorage("urls", urls);
   await writeToStorage("windowId2TabId", windowId2TabId);
-  storageLock = false;
+  mutex = false;
+}
+
+async function handlePopupOperation(message) {
+  while (mutex == true) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  mutex = true;
+  // 2. A page requested user data, respond with a copy of `user`
+  if (message[0] === 'readFromStorage') {
+    const response = await readFromStorage(message[1]);
+    mutex = false;
+    return response;
+  } else if (message[0] === 'writeToStorage') {
+    console.log("write to storage");
+    console.log(message);
+    await writeToStorage(message[1], message[2])
+    const storageData = await readFromStorage(message[1]);
+    console.log("storagedData");
+    console.log([message[1], storageData]);
+    mutex = false;
+    return true;
+  }
+  mutex = false;
+  return false;
 }

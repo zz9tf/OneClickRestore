@@ -1,36 +1,23 @@
-function logTabsForWindows(windowInfoArray) {
+function logTabs(windowArray) {
+  console.log("refresh tabs");
   document.querySelector(".windows").innerHTML = "";
   const window_tamplate = document.getElementById("window_template");
   const tab_template = document.getElementById("tab_template");
-  for (const windowInfo of windowInfoArray) {
-    const win_elem = window_tamplate.content.firstElementChild.cloneNode(true);
-    win_elem.querySelector(".window-title").textContent =
-      windowInfo.tabs.length + " tabs";
-    for (const tab of windowInfo.tabs) {
-      const element = tab_template.content.firstElementChild.cloneNode(true);
-      if (tab.title.length > 45) {
-        element.querySelector(".tab-title").textContent =
-          tab.title.substring(0, 45) + "...";
-      } else {
-        element.querySelector(".tab-title").textContent = tab.title;
-      }
-      element.querySelector(".tab-icon").src = tab.favIconUrl;
-      win_elem.querySelector(".window-tabs").append(element);
-    }
-    document.querySelector(".windows").append(win_elem);
+  let windowId = windowArray.length-1;
+  if (is_restore_mode) {
+    windowArray = windowArray.reverse();
   }
-}
-
-function logTabsFormHistory(historyArray) {
-  document.querySelector(".windows").innerHTML = "";
-  const window_tamplate = document.getElementById("window_template");
-  const tab_template = document.getElementById("tab_template");
-  for (const window of historyArray.reverse()) {
+  for (let window of windowArray) {
+    if (!is_restore_mode) {
+      window = window.tabs;
+    }
     const win_elem = window_tamplate.content.firstElementChild.cloneNode(true);
-    win_elem.querySelector(".window-title").textContent =
-      window.length + " tabs";
+    win_elem.querySelector(".window-title").textContent = window.length + " tabs";
+    
+    let tabId = 0;
     for (const tab of window) {
       const element = tab_template.content.firstElementChild.cloneNode(true);
+      element.setAttribute("id", JSON.stringify({"windowId" : windowId, "tabId" : tabId++}));
       if (tab.title.length > 45) {
         element.querySelector(".tab-title").textContent =
           tab.title.substring(0, 45) + "...";
@@ -40,38 +27,26 @@ function logTabsFormHistory(historyArray) {
       element.querySelector(".tab-icon").src = tab.favIconUrl;
       win_elem.querySelector(".window-tabs").append(element);
     }
+    if (is_restore_mode) {
+      win_elem.addEventListener('click', tabRestoreHandler);
+    }
     document.querySelector(".windows").append(win_elem);
   }
-}
-
-async function readFromStorage(key) {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get([key], (result) => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        resolve(result[key] || null);
-      }
-    });
-  });
-}
-
-async function writeToStorage(key, data) {
-  return new Promise((resolve, reject) => {
-    const dataToStore = {};
-    dataToStore[key] = data;
-    chrome.storage.local.set(dataToStore, () => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        resolve();
-      }
-    });
-  });
+  windowId--;
 }
 
 function onError(error) {
   console.error(`Error: ${error}`);
+}
+
+async function readFromStorage(key) {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(['readFromStorage', key], resolve)
+  });
+}
+
+async function writeToStorage(key, data) {
+  return await chrome.runtime.sendMessage(['writeToStorage', key, data]);
 }
 
 // Initialization
@@ -80,17 +55,23 @@ const toggle = document.querySelector(".restore-toggle-button");
 
 let is_restore_mode = await readFromStorage("mode");
 if (is_restore_mode == null) {
-  writeToStorage("mode", false);
+  await writeToStorage("mode", false);
+  is_restore_mode = await readFromStorage("mode");
+  console.log("is_restore_mode");
+  console.log(is_restore_mode);
 }
+
+console.log("here");
+
 if (is_restore_mode) {
   let history = await readFromStorage("history");
   if (history == null) {
     history = [];
   }
-  logTabsFormHistory(history);
+  logTabs(history);
   toggle.classList.toggle("active");
 } else {
-  chrome.windows.getAll({ populate: true }).then(logTabsForWindows, onError);
+  chrome.windows.getAll({ populate: true }).then(logTabs, onError);
 }
 
 // Event handlers
@@ -98,14 +79,14 @@ clear.addEventListener("click", clearHandler);
 toggle.addEventListener("click", toggleHandler);
 chrome.storage.onChanged.addListener(historyUpdateHandler);
 
-function clearHandler() {
+async function clearHandler() {
   if (is_restore_mode) {
     document.querySelector(".windows").innerHTML = "";
-    writeToStorage("history", []);
+    await writeToStorage("history", []);
   }
 }
 
-function toggleHandler() {
+async function toggleHandler() {
   toggle.classList.toggle("active");
   is_restore_mode = !is_restore_mode;
   writeToStorage("mode", is_restore_mode)
@@ -115,43 +96,50 @@ function toggleHandler() {
         if (history == null) {
           history = [];
         }
-        logTabsFormHistory(history);
+        logTabs(history);
       } else {
         chrome.windows
           .getAll({ populate: true })
-          .then(logTabsForWindows, onError);
+          .then(logTabs, onError);
       }
     })
     .catch(onError);
 }
 
-let historyUpdateLock = false;
-
 async function historyUpdateHandler() {
-  chrome.storage.onChanged.addListener(async (changes, namespace) => {
-    while (historyUpdateLock) {
-      await new Promise((resolve) => setTimeout(resolve, 50)); // Wait for 10ms before retrying
-    }
-    historyUpdateLock = true;
-    try {
-      if ("history" in changes && is_restore_mode) {
+  chrome.storage.onChanged.addListener(async (changes, _) => {
+    if ("history" in changes && is_restore_mode) {
+      console.log("history changed");
+      if (history == null) {
+        history = [];
+      }
+      if (is_restore_mode) {
         let history = await readFromStorage("history");
-        if (history == null) {
-          history = [];
-        }
-        logTabsFormHistory(history);
+        logTabs(history);
       }
-      if ("urls" in changes && !is_restore_mode) {
-        chrome.windows
+    }
+    if ("urls" in changes && !is_restore_mode) {
+      console.log("urls changed");
+      chrome.windows
           .getAll({ populate: true })
-          .then(logTabsForWindows, onError);
-      }
-    } catch (error) {
-      console.error("Error updating URLs:", error);
-    } finally {
-      historyUpdateLock = false;
+          .then(logTabs, onError);
     }
   });
 }
 
-// chrome.tabs.create() -> create a new tab
+async function tabRestoreHandler(event) {
+  console.log("Click to restore tab");
+  const tabElement = event.target.closest('.tab');
+  if (tabElement) {
+    const urlId = JSON.parse(tabElement.getAttribute('id'));
+    let history = await readFromStorage("history");
+    const tab = history[urlId.windowId][urlId.tabId];
+    if (history[urlId.windowId].length == 1) {
+      history.splice(urlId.windowId, 1);
+    } else {
+      history[urlId.windowId].splice(urlId.tabId, 1);
+    }
+    await writeToStorage("history", history);
+    chrome.tabs.create({active: false, url: tab.url});
+  }
+}
