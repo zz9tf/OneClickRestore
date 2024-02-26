@@ -2,6 +2,18 @@
 var mutex = false;
 var popup_port = undefined;
 
+// Listen for popup closed
+chrome.runtime.onConnect.addListener(function(port) {
+  if (port.name === "popup") {
+    console.log("popup connected");
+    popup_port = port;
+    port.onDisconnect.addListener(function() {
+      console.log("popup disconnected");
+      popup_port = undefined;
+    });
+  }
+});
+
 async function getCurrentUrls() {
   return new Promise((resolve, reject) => {
     let urls = {};
@@ -63,6 +75,41 @@ async function writeToStorage(key, data) {
   });
 }
 
+async function mutexWrapper(callback) {
+  while (mutex == true) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  mutex = true;
+  const response = await callback();
+  mutex = false;
+  return response;
+}
+
+async function updateData(dataAddToHistory, urls, windowId2TabId) {
+  // store the closed url into the history
+  let history = await readFromStorage("history");
+  if (history == null) {
+    history = [];
+  }
+  history.push(dataAddToHistory);
+  await writeToStorage("history", history);
+
+  // Update my recording
+  await writeToStorage("urls", urls);
+  await writeToStorage("windowId2TabId", windowId2TabId);
+  
+  // post message to popup window
+  let is_restore_mode = readFromStorage("mode")
+  if (popup_port != undefined) {
+    if (is_restore_mode) {
+      popup_port.postMessage({operation: "updateHistory", data: history});
+    } else {
+      popup_port.postMessage({operation: "updateUrls"});
+    }
+  }
+  mutex = false;
+}
+
 chrome.runtime.onInstalled.addListener(initAndCreatedAndUpdateEventHandler);
 
 // Listen for when a window is created or removed
@@ -80,46 +127,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-// Listen for popup closed
-chrome.runtime.onConnect.addListener(function(port) {
-  if (port.name === "popup") {
-    console.log("popup connected");
-    popup_port = port;
-    port.onDisconnect.addListener(function() {
-      console.log("popup disconnected");
-      popup_port = undefined;
-    });
-  }
-});
-
 
 async function initAndCreatedAndUpdateEventHandler() {
   console.log("windows onCreated event happened");
   let { urls, windowId2TabId } = await getCurrentUrls();
-  while (mutex == true) {
-    await new Promise((resolve) => setTimeout(resolve, 10));
-  }
-  mutex = true;
-  await writeToStorage("urls", urls);
-  await writeToStorage("windowId2TabId", windowId2TabId);
-  if (popup_port != undefined) {
-    popup_port.postMessage({operation: "updateUrls"});
-  }
-  mutex = false;
+  await mutexWrapper(async () => {
+    await writeToStorage("urls", urls);
+    await writeToStorage("windowId2TabId", windowId2TabId);
+    if (popup_port != undefined) {
+      popup_port.postMessage({operation: "updateUrls"});
+    }
+  })
 }
 
-async function storeClosedTabURL(tabId, removeInfo) {
-  if (removeInfo.isWindowClosing) {
-    return;
-  }
-  console.log("storeClosedTabURL");
-  const { urls, windowId2TabId } = await getCurrentUrls();
-  while (mutex == true) {
-    await new Promise((resolve) => setTimeout(resolve, 10));
-  }
-  mutex = true;
-  const storedUrls = await readFromStorage("urls");
-  // Check if the length of current urls has 1 more tab than stored urls.
+
+// Check if the length of current urls has 1 more tab than stored urls.
+function checkStoreClosedTabURLIsValid(tabId, storedUrls, urls) {
   if (Object.keys(storedUrls).length != Object.keys(urls).length + 1) {
     // Get an array of current urls' titles
     const currentTitles = Object.entries(urls).map(([key, value]) => value.title).join("\n");
@@ -141,79 +164,50 @@ async function storeClosedTabURL(tabId, removeInfo) {
         storedTitles
     );
   }
-  // store the closed url into the history
-  let history = await readFromStorage("history");
-  if (history == null) {
-    history = [];
-  }
-  history.push([storedUrls[tabId]]);
-  await writeToStorage("history", history);
+}
 
-  // Update my recording
-  await writeToStorage("urls", urls);
-  await writeToStorage("windowId2TabId", windowId2TabId);
-
-  let is_restore_mode = readFromStorage("mode")
-  if (popup_port != undefined) {
-    if (is_restore_mode) {
-      popup_port.postMessage({operation: "updateHistory", data: history});
-    } else {
-      popup_port.postMessage({operation: "updateUrls"});
-    }
+async function storeClosedTabURL(tabId, removeInfo) {
+  if (removeInfo.isWindowClosing) {
+    return;
   }
-  mutex = false;
+  console.log("storeClosedTabURL");
+  const { urls, windowId2TabId } = await getCurrentUrls();
+  mutexWrapper(async() => {
+    const storedUrls = await readFromStorage("urls");
+    checkStoreClosedTabURLIsValid(tabId, storedUrls, urls);
+    await updateData([storedUrls[tabId]]);
+  });
 }
 
 async function storeClosedWindow(windowId) {
   console.log("storeClosedWindow");
   const { urls, windowId2TabId } = await getCurrentUrls();
-  while (mutex == true) {
-    await new Promise((resolve) => setTimeout(resolve, 10));
-  }
-  mutex = true;
-  const storedUrls = await readFromStorage("urls");
-  const storedWindowId2TabId = await readFromStorage("windowId2TabId");
-  let windowTabs = [];
-  for (const i in storedWindowId2TabId[windowId]) {
-    windowTabs.push(storedUrls[storedWindowId2TabId[windowId][i]]);
-  }
-  let history = await readFromStorage("history");
-  if (history == null) {
-    history = [];
-  }
-  history.push(windowTabs);
-  await writeToStorage("history", history);
-  // Update my recording
-  await writeToStorage("urls", urls);
-  await writeToStorage("windowId2TabId", windowId2TabId);
-  let is_restore_mode = readFromStorage("mode")
-  if (popup_port != undefined) {
-    if (is_restore_mode) {
-      popup_port.postMessage({operation: "updateHistory", data: history});
-    } else {
-      popup_port.postMessage({operation: "updateUrls"});
+  mutexWrapper(async () => {
+    const storedUrls = await readFromStorage("urls");
+    const storedWindowId2TabId = await readFromStorage("windowId2TabId");
+    let windowTabs = [];
+    for (const i in storedWindowId2TabId[windowId]) {
+      windowTabs.push(storedUrls[storedWindowId2TabId[windowId][i]]);
     }
-  }
-  mutex = false;
+    await updateData(windowTabs);
+  })
 }
 
 async function handlePopupOperation(message) {
-  while (mutex == true) {
-    await new Promise((resolve) => setTimeout(resolve, 10));
-  }
-  mutex = true;
   if (message[0] === 'readFromStorage') {
-    const response = await readFromStorage(message[1]);
-    mutex = false;
+    const response = mutexWrapper(async () => {
+      const response = await readFromStorage(message[1]);
+      return response;
+    });
     return response;
   } else if (message[0] === 'writeToStorage') {
-    await writeToStorage(message[1], message[2]);
-    if (popup_port != undefined && message[1] == 'history') {
-      popup_port.postMessage({operation: "updateHistory", data: message[2]});
-    }
-    mutex = false;
+    mutexWrapper(async() => {
+      await writeToStorage(message[1], message[2]);
+      if (popup_port != undefined && message[1] == 'history') {
+        popup_port.postMessage({operation: "updateHistory", data: message[2]});
+      }
+    });
     return true;
   }
-  mutex = false;
   return false;
 }
