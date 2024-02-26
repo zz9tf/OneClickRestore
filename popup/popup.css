@@ -1,5 +1,5 @@
 body {
-    width: 20rem;
+    width: 22rem;
   }
   
 ul.windows {
@@ -62,12 +62,58 @@ div.restore-toggle-button.active {
 
 /* tamplate window */
 li.window {
+  padding-left: 10px;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+li.window::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px; /* Width of the vertical line */
+  height: 100%; /* Height of the vertical line */
+  background-color: rgba(118, 240, 173, 0.514); /* Color of the vertical line */
+  opacity: 0; /* Initially not visible */
+  transition: opacity 0.3s; /* Smooth transition */
+}
+
+.window:hover::before {
+  opacity: 1;
+}
+
+div.window-header {
+  display: flex;
+  flex-direction: row;
+  align-items: end;
+  justify-content: space-between;
+  padding: 5px;
+  cursor: pointer;
+}
+
+div.window-header:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+div.window-header-left {
+  display: flex;
+  flex-direction: row;
+  align-items: end;
 }
 
 p.window-title {
   margin: 0px;
+}
+
+div.window-date {
+  margin-left: 15px;
+  color: hsl(0, 0%, 70%);
+}
+
+div.window-icon {
+  margin-right: 5px;
 }
 
 ul.window-tabs {

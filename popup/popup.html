@@ -5,11 +5,18 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="./popup.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   </head>
   <body>
     <template id="window_template">
       <li class="window">
-        <p class="window-title">Number of tabs</p>
+        <div class="window-header">
+          <div class="window-header-left">
+            <div class="window-icon"></div>
+            <p class="window-title">Number of tabs</p>
+          </div>
+          <div class="window-date">Date</div>
+        </div>
         <ul class="window-tabs"></ul>
       </li>
     </template>

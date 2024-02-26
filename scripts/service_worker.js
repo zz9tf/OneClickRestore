@@ -198,12 +198,12 @@ function checkStoreClosedTabURLIsValid(tabId, storedUrls, urls) {
   if (Object.keys(storedUrls).length != Object.keys(urls).length + 1) {
     // Get an array of current urls' titles
     const currentTitles = Object.entries(urls)
-      .map(([key, value]) => value.title)
+      .map(([key, value]) => key + " " + value.title)
       .join("\n");
 
     // Get an array of stored urls' titles
     const storedTitles = Object.entries(storedUrls)
-      .map(([key, value]) => value.title)
+      .map(([key, value]) => key + " " + value.title)
       .join("\n");
     throw new Error(
       "Invalid history update since the number of current urls is not correct.\n" +
@@ -213,7 +213,7 @@ function checkStoreClosedTabURLIsValid(tabId, storedUrls, urls) {
         currentTitles +
         "\n\n" +
         "Try to close the tab: " +
-        storedUrls[tabId].title +
+        tabId +
         "\n\n" +
         " stored urls:" +
         Object.keys(storedUrls).length +
