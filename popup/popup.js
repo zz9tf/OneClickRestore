@@ -20,6 +20,11 @@ function logTabs(windowArray) {
       iconElem.classList.add("fa", "fa-external-link");
       iconElem.setAttribute("aria-hidden", "true");
       win_elem.querySelector(".window-icon").appendChild(iconElem);
+
+      iconElem = document.createElement("i");
+      iconElem.classList.add("fa", "fa-times-circle");
+      iconElem.setAttribute("aria-hidden", "true");
+      win_elem.querySelector(".window-close").appendChild(iconElem);
     }
     win_elem.querySelector(".window-title").textContent = window.length + " tabs";
     win_elem.querySelector(".window-date").textContent = date != undefined ? date.substring(0, 24) : "";
@@ -30,6 +35,12 @@ function logTabs(windowArray) {
       element.setAttribute("id", JSON.stringify({"windowId" : windowId, "tabId" : tabId++}));
       element.querySelector(".tab-title").textContent = tab.title;
       element.querySelector(".tab-icon").src = tab.favIconUrl;
+
+      let iconElem = document.createElement("i");
+      iconElem.classList.add("fa", "fa-times-circle");
+      iconElem.setAttribute("aria-hidden", "true");
+      element.querySelector(".tab-close").appendChild(iconElem);
+
       win_elem.querySelector(".window-tabs").append(element);
     }
     if (is_restore_mode) {
@@ -125,6 +136,7 @@ function updateHandler(message) {
 
 async function tabRestoreHandler(event) {
   console.log("Click to restore tab");
+  const closeElement = event.target.closest(".window-close") || event.target.closest(".tab-close");
   const winElement = event.target.closest('.window-header');
   const tabElement = event.target.closest('.tab');
   if (tabElement && winElement == null) {
@@ -136,9 +148,13 @@ async function tabRestoreHandler(event) {
     } else {
       history[urlId.windowId].urls.splice(urlId.tabId, 1);
     }
-    chrome.tabs.create({active: true, url: tab.url});
+    if (closeElement == null) {
+      chrome.tabs.create({active: true, url: tab.url});
+    }
     await writeToStorage("history", history);
-    window.close();
+    if (closeElement == null) {
+      window.close();
+    }    
   } else if (tabElement == null && winElement) {
     const winId = JSON.parse(winElement.getAttribute('id'));
     console.log(winId);
@@ -146,11 +162,15 @@ async function tabRestoreHandler(event) {
     let history = await readFromStorage("history");
     const winTabs = history[winId.windowId].urls.map(tab => tab.url);
     history.splice(winId.windowId, 1);
-    chrome.windows.create({
-      focused: true,
-      url: winTabs
-    });
+    if (closeElement == null) {
+      chrome.windows.create({
+        focused: true,
+        url: winTabs
+      });
+    }
     await writeToStorage("history", history);
-    window.close();
+    if (closeElement == null) {
+      window.close();
+    }
   }
 }

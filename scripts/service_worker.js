@@ -89,12 +89,19 @@ async function writeToStorage(key, data) {
   return new Promise((resolve, reject) => {
     const dataToStore = {};
     dataToStore[key] = data;
-    chrome.storage.local.set(dataToStore, () => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        resolve();
-      }
+    console.log("key: " + key);
+    chrome.storage.local.getBytesInUse(null, function(bytes) {
+      console.log('Bytes used:', bytes);
+      const dataSize = new Blob([JSON.stringify(data)]).size;
+      console.log("dataSize: ", dataSize);
+
+      chrome.storage.local.set(dataToStore, () => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve();
+        }
+      });
     });
   });
 }
@@ -123,6 +130,7 @@ async function mutexWrapper(callback) {
  *              urls: dataAddToHistory
  *           }...
  *        ];
+ * 
  *
  *        dataAddToHistory = [{url: tab.url, title: tab.title, favIconUrl: tab.favIconUrl} ...]
  *
@@ -228,11 +236,11 @@ async function storeClosedTabURL(tabId, removeInfo) {
     return;
   }
   console.log("storeClosedTabURL");
-  const { urls, _ } = await getCurrentUrls();
+  const { urls, windowId2TabId } = await getCurrentUrls();
   await mutexWrapper(async () => {
     const storedUrls = await readFromStorage("urls");
     checkStoreClosedTabURLIsValid(tabId, storedUrls, urls);
-    await updateData([storedUrls[tabId]]);
+    await updateData([storedUrls[tabId]], urls, windowId2TabId);
   });
 }
 
@@ -281,7 +289,7 @@ async function storeClosedWindow(windowId) {
     for (const i in storedWindowId2TabId[windowId]) {
       windowTabs.push(storedUrls[storedWindowId2TabId[windowId][i]]);
     }
-    await updateData(windowTabs);
+    await updateData(windowTabs, urls, windowId2TabId);
   });
 }
 

@@ -62,7 +62,7 @@ div.restore-toggle-button.active {
 
 /* tamplate window */
 li.window {
-  padding-left: 10px;
+  padding-left: 5px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -89,7 +89,7 @@ div.window-header {
   flex-direction: row;
   align-items: end;
   justify-content: space-between;
-  padding: 5px;
+  padding: 5px 5px 5px 0px;
   cursor: pointer;
 }
 
@@ -105,6 +105,21 @@ div.window-header-left {
 
 p.window-title {
   margin: 0px;
+  padding: 2px;
+}
+
+div.window-close {
+  padding: 2px;
+  color: crimson;
+  opacity: 0;
+}
+
+div.window-close:hover {
+  color:rgb(0, 128, 0);
+}
+
+div.window-header:hover .window-close {
+  opacity: 1;
 }
 
 div.window-date {
@@ -114,6 +129,7 @@ div.window-date {
 
 div.window-icon {
   margin-right: 5px;
+  padding: 2px;
 }
 
 ul.window-tabs {
@@ -124,8 +140,15 @@ ul.window-tabs {
 li.tab {
   display: flex;
   flex-direction: row;
+  padding: 0px 5px 0px 0px;
+  justify-content: space-between;
   align-items: center; 
   cursor: pointer;
+}
+div.tab-left {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
 
 li.tab:hover {
@@ -141,4 +164,18 @@ img.tab-icon {
 
 p.tab-title {
   margin: 0px;
+}
+
+div.tab-close {
+  padding: 2px;
+  color: crimson;
+  opacity: 0;
+}
+
+div.tab-close:hover {
+  color:rgb(0, 128, 0);
+}
+
+li.tab:hover .tab-close {
+  opacity: 1;
 }
