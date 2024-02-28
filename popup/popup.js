@@ -5,13 +5,19 @@ function logTabs(windowArray) {
   const tab_template = document.getElementById("tab_template");
   let windowId = windowArray.length-1;
   if (is_history_mode) {
-    console.log(windowArray)
+    console.log("history: ", windowArray)
     windowArray = windowArray.reverse();
   }
   let date = undefined;
   for (let window of windowArray) {
     let win_elem = window_tamplate.content.firstElementChild.cloneNode(true);
     if (!is_history_mode) {
+      // Set header left icon
+      let iconElem = document.createElement("i");
+      iconElem.classList.add("fa", "fa-window-maximize");
+      iconElem.setAttribute("aria-hidden", "true");
+      win_elem.querySelector(".window-icon").appendChild(iconElem);
+      // Set date
       win_elem.querySelector(".window-date").textContent = "";
       window = window.tabs;
     } else {
@@ -53,7 +59,7 @@ function logTabs(windowArray) {
       win_elem.querySelector(".window-tabs").append(element);
     }
     if (is_history_mode) {
-      win_elem.addEventListener('click', tabRestoreHandler);
+      win_elem.addEventListener('click', clickEventHandler);
     }
     document.querySelector(".windows").append(win_elem);
     windowId--;
@@ -101,6 +107,8 @@ if (is_history_mode) {
 // Event handlers
 clear.addEventListener("click", clearHandler);
 history_mode_button.addEventListener("click", historyModeHandler);
+history_mode_button.addEventListener("mouseover", historyMouseoverHandler);
+history_mode_button.addEventListener("mouseleave", historyMouseleaveHandler);
 // Set up port between popup and service_worker
 const port = chrome.runtime.connect({ name: "popup" });
 port.onMessage.addListener(updateHandler);
@@ -143,7 +151,7 @@ function updateHandler(message) {
   }
 }
 
-async function tabRestoreHandler(event) {
+async function clickEventHandler(event) {
   console.log("Click to restore tab");
   const closeElement = event.target.closest(".window-close") || event.target.closest(".tab-close");
   const winElement = event.target.closest('.window-header');
@@ -182,4 +190,26 @@ async function tabRestoreHandler(event) {
       window.close();
     }
   }
+}
+
+async function historyMouseoverHandler() {
+  console.log("Mouseover event");
+  var rect = history_mode_button.getBoundingClientRect();
+  var popoverContent = document.getElementById("history-mode-explain");
+  // Calculate the position of the popover relative to the button
+  var popoverTop = rect.top+history_mode_button.clientHeight;
+  var popoverLeft = rect.left-popoverContent.clientWidth/2;
+
+  // Set the position of the popover
+  popoverContent.style.top = popoverTop + "px";
+  popoverContent.style.left = popoverLeft + "px";
+
+  // Show the popover
+  popoverContent.style.display = "block";
+}
+
+async function historyMouseleaveHandler() {
+  console.log("Leave event");
+  var popoverContent = document.getElementById("history-mode-explain");
+  popoverContent.style.display = "none";
 }

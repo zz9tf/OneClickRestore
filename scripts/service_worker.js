@@ -83,6 +83,7 @@ async function writeToStorage(key, data) {
   const keybytes = await chrome.storage.local.getBytesInUse([key]);
   const dataSize = new Blob([JSON.stringify(data)]).size;
   totalBytes = totalBytes + dataSize - keybytes;
+  console.log("key: ", key);
   console.log("totalBytes: " + totalBytes);
   
   let history = data;
@@ -91,7 +92,7 @@ async function writeToStorage(key, data) {
     history = history['history'];
   }
 
-  const localSizeLimitation = 5242880;
+  const localSizeLimitation = 5242880; // 5MB
   if (totalBytes > localSizeLimitation) {
     console.log(history);
     let usedBytes = JSON.stringify(history).length;
@@ -102,8 +103,10 @@ async function writeToStorage(key, data) {
     }
     console.log(history);
     await chrome.storage.local.set({["history"]: history});
-  }
-  if (key != 'history') {
+    if (key != 'history') {
+      await chrome.storage.local.set({ [key]: data });
+    }
+  } else {
     await chrome.storage.local.set({ [key]: data });
   }
 }
@@ -164,12 +167,12 @@ async function updateData(dataAddToHistory, urls, windowId2TabId) {
   await writeToStorage("windowId2TabId", windowId2TabId);
 
   // post message to popup window
-  let is_restore_mode = readFromStorage("mode");
+  let is_history_mode = await readFromStorage("mode");
   if (popup_port != undefined) {
-    if (is_restore_mode) {
+    if (is_history_mode) {
       popup_port.postMessage({ operation: "updateHistory", data: history });
     } else {
-      popup_port.postMessage({ operation: "updateUrls" });
+      popup_port.postMessage({ operation: "updateUrls"});
     }
   }
   mutex = false;
@@ -193,7 +196,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function initAndCreatedAndUpdateEventHandler() {
-  console.log("windows onCreated event happened");
   let { urls, windowId2TabId } = await getCurrentUrls();
   await mutexWrapper(async () => {
     await writeToStorage("urls", urls);
@@ -238,7 +240,6 @@ async function storeClosedTabURL(tabId, removeInfo) {
   if (removeInfo.isWindowClosing) {
     return;
   }
-  console.log("storeClosedTabURL");
   const { urls, windowId2TabId } = await getCurrentUrls();
   await mutexWrapper(async () => {
     const storedUrls = await readFromStorage("urls");
@@ -277,12 +278,9 @@ async function checkStoreClosedWindowIsValid(urls, storedUrls) {
 }
 
 async function storeClosedWindow(windowId) {
-  console.log("storeClosedWindow");
   const { urls, windowId2TabId } = await getCurrentUrls();
-  console.log(urls);
   const storedUrls = await readFromStorage("urls");
   const storedWindowId2TabId = await readFromStorage("windowId2TabId");
-  console.log()
   if (Object.keys(urls).length == Object.keys(storedUrls).length) {
     console.log("not changed urls");
     return;

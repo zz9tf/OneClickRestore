@@ -33,9 +33,11 @@
     </template>
 
     <div class="header">
-      <div class="title"">One Click Restore</div>
+      <div class="title"">History Manager</div>
       <div class="button-area">
-        <div class="history-mode"><i class="fa fa-clock-o" aria-hidden></i></div>
+        <div class="history-mode">
+          <i class="fa fa-clock-o" aria-hidden="true"></i>
+        </div>
         <div class="clear-button">
           <img class="clear-icon" src="../images/broom.png" alt="Icon">
         </div>
@@ -44,5 +46,8 @@
     </div>
     <ul class="windows"></ul>
     <script src="./popup.js" type="module"></script>
+    <div id="history-mode-explain" class="explainer">
+      Popover Content
+    </div>
   </body>
 </html>

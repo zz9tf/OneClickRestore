@@ -32,13 +32,23 @@ div.button-area {
 
 div.history-mode {
   font-size: 18px;
-  opacity: 0.5;
+  opacity: 0.3;
   margin-right: 10px;
   cursor: pointer;
 }
 
+div.history-mode:hover {
+  opacity: 1;
+}
+
 div.history-mode.active {
   opacity: 1;
+}
+
+div.explainer {
+  /* display: none; */
+  position: absolute;
+  background-color: black;
 }
 
 div.clear-button {
@@ -49,48 +59,12 @@ img.clear-icon {
   height: 18px;
   width: 18px;
   margin-right: 5px;
+  opacity: 0.3;
 }
 
-div.restore-toggle {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+img.clear-icon:hover {
+  opacity: 1;
 }
-
-div.restore-toggle-button {
-  position: relative;
-  height: 22px;
-  width: 40px;
-  margin: 5px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 20px;
-  background-color: white;
-  /* box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1); */
-  cursor: pointer;
-  transition: all 0.3s ease-in-out;
-}
-
-div.restore-toggle-button::before {
-  content: "";
-  position: absolute;
-  height: 16px;
-  width: 16px;
-  background-color: black;
-  border-radius: 50%;
-  top: 50%;
-  left: 3px;
-  transform: translateY(-50%);
-  transition: all 0.3s ease-in-out;
-}
-
-div.restore-toggle-button.active::before {
-  left: calc(100% - 16px - 3px);
-}
-
-div.restore-toggle-button.active {
-  background-color: greenyellow;
-}
-
 
 /* tamplate window */
 li.window {
