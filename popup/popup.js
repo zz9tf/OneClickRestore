@@ -4,30 +4,39 @@ function logTabs(windowArray) {
   const window_tamplate = document.getElementById("window_template");
   const tab_template = document.getElementById("tab_template");
   let windowId = windowArray.length-1;
-  if (is_restore_mode) {
+  if (is_history_mode) {
+    console.log(windowArray)
     windowArray = windowArray.reverse();
   }
+  let date = undefined;
   for (let window of windowArray) {
-    var date = undefined;
     let win_elem = window_tamplate.content.firstElementChild.cloneNode(true);
-    if (!is_restore_mode) {
+    if (!is_history_mode) {
+      win_elem.querySelector(".window-date").textContent = "";
       window = window.tabs;
     } else {
-      date = window.date;
-      window = window.urls;
+      // Set header
       win_elem.querySelector(".window-header").setAttribute("id", JSON.stringify({"windowId": windowId}));
+      // Set header left icon
       let iconElem = document.createElement("i");
       iconElem.classList.add("fa", "fa-external-link");
       iconElem.setAttribute("aria-hidden", "true");
       win_elem.querySelector(".window-icon").appendChild(iconElem);
-
+      // Set header right icon
       iconElem = document.createElement("i");
       iconElem.classList.add("fa", "fa-times-circle");
       iconElem.setAttribute("aria-hidden", "true");
       win_elem.querySelector(".window-close").appendChild(iconElem);
+      // Set date
+      const win_date = win_elem.querySelector(".window-date");
+      if (date == undefined || date.substring(0, 15) != window.date.substring(0, 15)) {
+        win_date.classList.add("special-date");
+      }
+      date = window.date;
+      win_date.textContent = date.substring(0, 24);
+      window = window.urls;
     }
     win_elem.querySelector(".window-title").textContent = window.length + " tabs";
-    win_elem.querySelector(".window-date").textContent = date != undefined ? date.substring(0, 24) : "";
     
     let tabId = 0;
     for (const tab of window) {
@@ -43,7 +52,7 @@ function logTabs(windowArray) {
 
       win_elem.querySelector(".window-tabs").append(element);
     }
-    if (is_restore_mode) {
+    if (is_history_mode) {
       win_elem.addEventListener('click', tabRestoreHandler);
     }
     document.querySelector(".windows").append(win_elem);
@@ -68,47 +77,47 @@ async function writeToStorage(key, data) {
 
 // Initialization
 const clear = document.querySelector(".clear-button");
-const toggle = document.querySelector(".restore-toggle-button");
+const history_mode_button = document.querySelector(".history-mode");
 
-let is_restore_mode = await readFromStorage("mode");
-if (is_restore_mode == null) {
-  await writeToStorage("mode", false);
-  is_restore_mode = await readFromStorage("mode");
-  console.log("is_restore_mode");
-  console.log(is_restore_mode);
+let is_history_mode = await readFromStorage("mode");
+if (is_history_mode == null) {
+  await writeToStorage("mode", true);
+  is_history_mode = await readFromStorage("mode");
+  console.log("is_history_mode");
+  console.log(is_history_mode);
 }
 
-if (is_restore_mode) {
+if (is_history_mode) {
   let history = await readFromStorage("history");
   if (history == null) {
     history = [];
   }
   logTabs(history);
-  toggle.classList.toggle("active");
+  history_mode_button.classList.toggle("active");
 } else {
   chrome.windows.getAll({ populate: true }).then(logTabs, onError);
 }
 
 // Event handlers
 clear.addEventListener("click", clearHandler);
-toggle.addEventListener("click", toggleHandler);
+history_mode_button.addEventListener("click", historyModeHandler);
 // Set up port between popup and service_worker
 const port = chrome.runtime.connect({ name: "popup" });
 port.onMessage.addListener(updateHandler);
 
 async function clearHandler() {
-  if (is_restore_mode) {
+  if (is_history_mode) {
     document.querySelector(".windows").innerHTML = "";
     await writeToStorage("history", []);
   }
 }
 
-async function toggleHandler() {
-  toggle.classList.toggle("active");
-  is_restore_mode = !is_restore_mode;
-  writeToStorage("mode", is_restore_mode)
+async function historyModeHandler() {
+  history_mode_button.classList.toggle("active");
+  is_history_mode = !is_history_mode;
+  writeToStorage("mode", is_history_mode)
     .then(async () => {
-      if (is_restore_mode) {
+      if (is_history_mode) {
         let history = await readFromStorage("history");
         if (history == null) {
           history = [];
@@ -125,10 +134,10 @@ async function toggleHandler() {
 
 function updateHandler(message) {
   console.log(message);
-  if (message.operation == "updateHistory" && is_restore_mode) {
+  if (message.operation == "updateHistory" && is_history_mode) {
     console.log("history changed")
     logTabs(message.data);
-  } else if (message.operation == "updateUrls" && !is_restore_mode) {
+  } else if (message.operation == "updateUrls" && !is_history_mode) {
     console.log("urls changed");
     chrome.windows.getAll({ populate: true }).then(logTabs, onError);
   }

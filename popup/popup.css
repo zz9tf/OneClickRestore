@@ -1,28 +1,60 @@
 body {
-    width: 22rem;
-  }
-  
+  width: 22rem;
+  overflow: hidden;
+}
+ 
+div.header {
+  display: flex;
+  flex-direction: row;
+  align-items: end;
+  justify-content: space-between;
+  margin-top: 20px;
+  margin-bottom: 5px;
+}
+
 ul.windows {
   display: flex;
   flex-direction: column;
   padding-inline-start: 0px;
+  margin-block-start: 0em;
+}
+
+div.title {
+  font-size: 1.5em;
+  font-weight: bold;
 }
 
 div.button-area {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  align-items: end;
+}
+
+div.history-mode {
+  font-size: 18px;
+  opacity: 0.5;
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+div.history-mode.active {
+  opacity: 1;
+}
+
+div.clear-button {
+  cursor: pointer;
+}
+
+img.clear-icon {
+  height: 18px;
+  width: 18px;
+  margin-right: 5px;
 }
 
 div.restore-toggle {
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-p.restore-toggle-tag {
-  margin-block-start: 0px;
-  margin-block-end: 0px;
 }
 
 div.restore-toggle-button {
@@ -75,7 +107,7 @@ li.window::before {
   left: 0;
   width: 2px; /* Width of the vertical line */
   height: 100%; /* Height of the vertical line */
-  background-color: rgba(118, 240, 173, 0.514); /* Color of the vertical line */
+  background-color: rgba(118, 216, 240, 0.514); /* Color of the vertical line */
   opacity: 0; /* Initially not visible */
   transition: opacity 0.3s; /* Smooth transition */
 }
@@ -125,6 +157,19 @@ div.window-header:hover .window-close {
 div.window-date {
   margin-left: 15px;
   color: hsl(0, 0%, 70%);
+}
+
+/* Style for the horizontal line */
+.special-date::before {
+  content: ""; /* Create an empty content */
+  display: block; /* Make it a block element */
+  position: absolute; /* Position it absolutely */
+  top: 0%; /* Place it in the middle vertically */
+  left: 0%; /* Align it to the left */
+  width: 100%; /* Set its width to match the parent element */
+  height: 1px; /* Height of the horizontal line */
+  background-color: rgba(0, 0, 0, 0.116); /* Color of the horizontal line */
+  opacity: 1;
 }
 
 div.window-icon {

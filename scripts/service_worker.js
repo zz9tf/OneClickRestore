@@ -68,15 +68,8 @@ async function getCurrentUrls() {
  * @returns {Promise<any>} A Promise that resolves with the data retrieved from storage, or null if the key does not exist.
  */
 async function readFromStorage(key) {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get([key], (result) => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        resolve(result[key] || null);
-      }
-    });
-  });
+  const response = await chrome.storage.local.get([key]);
+  return response == undefined ? null : response[key];
 }
 
 /**
@@ -86,25 +79,35 @@ async function readFromStorage(key) {
  * @returns {Promise<void>} A Promise that resolves when the data has been successfully written to storage.
  */
 async function writeToStorage(key, data) {
-  return new Promise((resolve, reject) => {
-    const dataToStore = {};
-    dataToStore[key] = data;
-    console.log("key: " + key);
-    chrome.storage.local.getBytesInUse(null, function(bytes) {
-      console.log('Bytes used:', bytes);
-      const dataSize = new Blob([JSON.stringify(data)]).size;
-      console.log("dataSize: ", dataSize);
+  let totalBytes = await chrome.storage.local.getBytesInUse(null);
+  const keybytes = await chrome.storage.local.getBytesInUse([key]);
+  const dataSize = new Blob([JSON.stringify(data)]).size;
+  totalBytes = totalBytes + dataSize - keybytes;
+  console.log("totalBytes: " + totalBytes);
+  
+  let history = data;
+  if (key != 'history') {
+    history = await chrome.storage.local.get(["history"]);
+    history = history['history'];
+  }
 
-      chrome.storage.local.set(dataToStore, () => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve();
-        }
-      });
-    });
-  });
+  const localSizeLimitation = 5242880;
+  if (totalBytes > localSizeLimitation) {
+    console.log(history);
+    let usedBytes = JSON.stringify(history).length;
+    const requireBytes = usedBytes - totalBytes + localSizeLimitation;
+    while (usedBytes > requireBytes && 0 < history.length) {
+      usedBytes -= JSON.stringify(history[0].length);
+      history.splice(0, 1);
+    }
+    console.log(history);
+    await chrome.storage.local.set({["history"]: history});
+  }
+  if (key != 'history') {
+    await chrome.storage.local.set({ [key]: data });
+  }
 }
+
 
 /**
  * Executes a callback function while preventing concurrent execution using a mutex.
