@@ -101,13 +101,16 @@ async function writeToStorage(key, data) {
       usedBytes -= JSON.stringify(history[0].length);
       history.splice(0, 1);
     }
-    console.log(history);
     await chrome.storage.local.set({["history"]: history});
     if (key != 'history') {
       await chrome.storage.local.set({ [key]: data });
+      return data;
+    } else {
+      return history;
     }
   } else {
     await chrome.storage.local.set({ [key]: data });
+    return data;
   }
 }
 
@@ -160,7 +163,7 @@ async function updateData(dataAddToHistory, urls, windowId2TabId) {
     history = [];
   }
   history.push({ date: new Date().toString(), urls: dataAddToHistory });
-  await writeToStorage("history", history);
+  history = await writeToStorage("history", history);
 
   // Update my recording
   await writeToStorage("urls", urls);
