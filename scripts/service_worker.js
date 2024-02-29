@@ -83,6 +83,7 @@ async function writeToStorage(key, data) {
   const keybytes = await chrome.storage.local.getBytesInUse([key]);
   const dataSize = new Blob([JSON.stringify(data)]).size;
   totalBytes = totalBytes + dataSize - keybytes;
+  console.log("key: ", key);
   console.log("totalBytes: " + totalBytes);
   
   let history = data;
@@ -100,11 +101,16 @@ async function writeToStorage(key, data) {
       usedBytes -= JSON.stringify(history[0].length);
       history.splice(0, 1);
     }
-    console.log(history);
     await chrome.storage.local.set({["history"]: history});
-  }
-  if (key != 'history') {
+    if (key != 'history') {
+      await chrome.storage.local.set({ [key]: data });
+      return data;
+    } else {
+      return history;
+    }
+  } else {
     await chrome.storage.local.set({ [key]: data });
+    return data;
   }
 }
 
@@ -157,7 +163,7 @@ async function updateData(dataAddToHistory, urls, windowId2TabId) {
     history = [];
   }
   history.push({ date: new Date().toString(), urls: dataAddToHistory });
-  await writeToStorage("history", history);
+  history = await writeToStorage("history", history);
 
   // Update my recording
   await writeToStorage("urls", urls);
@@ -279,10 +285,8 @@ async function checkStoreClosedWindowIsValid(urls, storedUrls) {
 async function storeClosedWindow(windowId) {
   console.log("storeClosedWindow");
   const { urls, windowId2TabId } = await getCurrentUrls();
-  console.log(urls);
   const storedUrls = await readFromStorage("urls");
   const storedWindowId2TabId = await readFromStorage("windowId2TabId");
-  console.log()
   if (Object.keys(urls).length == Object.keys(storedUrls).length) {
     console.log("not changed urls");
     return;

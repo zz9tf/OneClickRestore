@@ -16,7 +16,8 @@
     "permissions": [
         "tabs", 
         "windows",
-        "storage"
+        "storage",
+        "background"
     ],
     "background" : {
         "service_worker": "scripts/service_worker.js",
