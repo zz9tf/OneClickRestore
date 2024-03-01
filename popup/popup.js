@@ -11,20 +11,20 @@ function logTabs(windowArray) {
   let date = undefined;
   for (let window of windowArray) {
     let win_elem = window_tamplate.content.firstElementChild.cloneNode(true);
+    // Set header right icon
+    let iconElem = document.createElement("i");
+    iconElem.classList.add("fa", "fa-times-circle");
+    iconElem.setAttribute("aria-hidden", "true");
+    win_elem.querySelector(".window-close").appendChild(iconElem);
     if (is_history_mode) {
       // If this is history mode
       // Set header
       win_elem.querySelector(".window-header").setAttribute("id", JSON.stringify({ "windowId": windowId }));
       // Set header left icon
-      let iconElem = document.createElement("i");
+      iconElem = document.createElement("i");
       iconElem.classList.add("fa", "fa-external-link");
       iconElem.setAttribute("aria-hidden", "true");
       win_elem.querySelector(".window-icon").appendChild(iconElem);
-      // Set header right icon
-      iconElem = document.createElement("i");
-      iconElem.classList.add("fa", "fa-times-circle");
-      iconElem.setAttribute("aria-hidden", "true");
-      win_elem.querySelector(".window-close").appendChild(iconElem);
       // Set date
       const win_date = win_elem.querySelector(".window-date");
       if (date == undefined || date.substring(0, 15) != window.date.substring(0, 15)) {
@@ -36,7 +36,7 @@ function logTabs(windowArray) {
     } else {
       // If this is not history mode
       // Set header left icon
-      let iconElem = document.createElement("i");
+      iconElem = document.createElement("i");
       iconElem.classList.add("fa", "fa-window-maximize");
       iconElem.setAttribute("aria-hidden", "true");
       win_elem.querySelector(".window-icon").appendChild(iconElem);
