@@ -12,7 +12,6 @@
       "default_popup": "popup/popup.html",
       "default_icon": "images/hello_extensions.png"
     },
-    "host_permissions": ["https://*/*"],
     "permissions": [
         "tabs", 
         "windows",
