@@ -14,10 +14,6 @@ History Manager utilizes local storage to record and store browsing history loca
 
 The background permission enables History Manager to record the last closed window or tab when the browser is closed. This feature enhances user experience by allowing users to easily restore their browsing sessions across different browsing sessions.
 
-### Host Permission
-
-History Manager may request access to host information to determine the current tabs and windows the user is opening. This information helps improve the functionality of the extension and enhances user experience by providing relevant browsing history management features.
-
 ### Remote Code
 
 History Manager may utilize remote code to track user history locally and facilitate the seamless restoration of browsing sessions. Additionally, remote code assists users in quickly switching their focus between tabs or windows, enhancing browsing efficiency.
