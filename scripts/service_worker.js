@@ -28,6 +28,7 @@ chrome.runtime.onConnect.addListener(function (port) {
  * @returns {Object} { urls, windowId2TabId }
  */
 async function getCurrentUrls() {
+  console.log("getCurrentUrls");
   return new Promise((resolve, reject) => {
     let urls = {};
     let windowId2TabId = {}; // {windowId : [...tab.id]}
@@ -68,6 +69,7 @@ async function getCurrentUrls() {
  * @returns {Promise<any>} A Promise that resolves with the data retrieved from storage, or null if the key does not exist.
  */
 async function readFromStorage(key) {
+  console.log("readFromStorage");
   const response = await chrome.storage.local.get([key]);
   return response == undefined ? null : response[key];
 }
@@ -79,13 +81,13 @@ async function readFromStorage(key) {
  * @returns {Promise<void>} A Promise that resolves when the data has been successfully written to storage.
  */
 async function writeToStorage(key, data) {
+  console.log("writeToStorage")
   let totalBytes = await chrome.storage.local.getBytesInUse(null);
   const keybytes = await chrome.storage.local.getBytesInUse([key]);
   const dataSize = new Blob([JSON.stringify(data)]).size;
   totalBytes = totalBytes + dataSize - keybytes;
-  console.log("key: ", key);
-  console.log("totalBytes: " + totalBytes);
-  
+  console.log(key, data);
+
   let history = data;
   if (key != 'history') {
     history = await chrome.storage.local.get(["history"]);
@@ -101,7 +103,7 @@ async function writeToStorage(key, data) {
       usedBytes -= JSON.stringify(history[0].length);
       history.splice(0, 1);
     }
-    await chrome.storage.local.set({["history"]: history});
+    await chrome.storage.local.set({ ["history"]: history });
     if (key != 'history') {
       await chrome.storage.local.set({ [key]: data });
       return data;
@@ -121,6 +123,7 @@ async function writeToStorage(key, data) {
  * @returns {Promise<any>} A Promise that resolves with the result of the callback function.
  */
 async function mutexWrapper(callback) {
+  console.log("mutexWrapper");
   while (mutex == true) {
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
@@ -157,6 +160,7 @@ async function mutexWrapper(callback) {
  * @returns {Promise<void>} A Promise that resolves when the data has been successfully updated and the message has been posted.
  */
 async function updateData(dataAddToHistory, urls, windowId2TabId) {
+  console.log("updateData");
   // store the closed url into the history
   let history = await readFromStorage("history");
   if (history == null) {
@@ -170,15 +174,16 @@ async function updateData(dataAddToHistory, urls, windowId2TabId) {
   await writeToStorage("windowId2TabId", windowId2TabId);
 
   // post message to popup window
-  let is_restore_mode = readFromStorage("mode");
+  let is_restore_mode = await readFromStorage("mode");
   if (popup_port != undefined) {
     if (is_restore_mode) {
+      console.log("updateHistory popup");
       popup_port.postMessage({ operation: "updateHistory", data: history });
     } else {
+      console.log("updateUrls popup");
       popup_port.postMessage({ operation: "updateUrls" });
     }
   }
-  mutex = false;
 }
 
 chrome.runtime.onInstalled.addListener(initAndCreatedAndUpdateEventHandler);
@@ -199,7 +204,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function initAndCreatedAndUpdateEventHandler() {
-  console.log("windows onCreated event happened");
+  console.log("initAndCreatedAndUpdateEventHandler");
   let { urls, windowId2TabId } = await getCurrentUrls();
   await mutexWrapper(async () => {
     await writeToStorage("urls", urls);
@@ -212,6 +217,7 @@ async function initAndCreatedAndUpdateEventHandler() {
 
 // Check if the length of current urls has 1 more tab than stored urls.
 function checkStoreClosedTabURLIsValid(tabId, storedUrls, urls) {
+  console.log("checkStoreClosedTabURLIsValid");
   if (Object.keys(storedUrls).length != Object.keys(urls).length + 1) {
     // Get an array of current urls' titles
     const currentTitles = Object.entries(urls)
@@ -224,36 +230,39 @@ function checkStoreClosedTabURLIsValid(tabId, storedUrls, urls) {
       .join("\n");
     throw new Error(
       "Invalid history update since the number of current urls is not correct.\n" +
-        "current urls: " +
-        Object.keys(urls).length +
-        "\n" +
-        currentTitles +
-        "\n\n" +
-        "Try to close the tab: " +
-        tabId +
-        "\n\n" +
-        " stored urls:" +
-        Object.keys(storedUrls).length +
-        "\n" +
-        storedTitles
+      "current urls: " +
+      Object.keys(urls).length +
+      "\n" +
+      currentTitles +
+      "\n\n" +
+      "Try to close the tab: " +
+      tabId +
+      "\n\n" +
+      " stored urls:" +
+      Object.keys(storedUrls).length +
+      "\n" +
+      storedTitles
     );
   }
 }
 
 async function storeClosedTabURL(tabId, removeInfo) {
-  if (removeInfo.isWindowClosing) {
+  try {
+    await chrome.windows.get(removeInfo.windowId);
+    console.log("storeClosedTabURL");
+    const { urls, windowId2TabId } = await getCurrentUrls();
+    await mutexWrapper(async () => {
+      const storedUrls = await readFromStorage("urls");
+      checkStoreClosedTabURLIsValid(tabId, storedUrls, urls);
+      await updateData([storedUrls[tabId]], urls, windowId2TabId);
+    });
+  } catch (error) {
     return;
   }
-  console.log("storeClosedTabURL");
-  const { urls, windowId2TabId } = await getCurrentUrls();
-  await mutexWrapper(async () => {
-    const storedUrls = await readFromStorage("urls");
-    checkStoreClosedTabURLIsValid(tabId, storedUrls, urls);
-    await updateData([storedUrls[tabId]], urls, windowId2TabId);
-  });
 }
 
 async function checkStoreClosedWindowIsValid(urls, storedUrls) {
+  console.log("checkStoreClosedWindowIsValid");
   if (Object.keys(storedUrls).length != Object.keys(urls).length + 1) {
     // Get an array of current urls' titles
     const currentTitles = Object.entries(urls)
@@ -266,18 +275,18 @@ async function checkStoreClosedWindowIsValid(urls, storedUrls) {
       .join("\n");
     throw new Error(
       "Invalid history update since the number of current urls is not correct.\n" +
-        "current urls: " +
-        Object.keys(urls).length +
-        "\n" +
-        currentTitles +
-        "\n\n" +
-        "Try to close the tab: " +
-        storedUrls[tabId].title +
-        "\n\n" +
-        " stored urls:" +
-        Object.keys(storedUrls).length +
-        "\n" +
-        storedTitles
+      "current urls: " +
+      Object.keys(urls).length +
+      "\n" +
+      currentTitles +
+      "\n\n" +
+      "Try to close the tab: " +
+      storedUrls[tabId].title +
+      "\n\n" +
+      " stored urls:" +
+      Object.keys(storedUrls).length +
+      "\n" +
+      storedTitles
     );
   }
 }
@@ -301,6 +310,7 @@ async function storeClosedWindow(windowId) {
 }
 
 async function handlePopupOperation(message) {
+  console.log("handlePopupOperation", message);
   if (message[0] === "readFromStorage") {
     const response = await mutexWrapper(async () => {
       const response = await readFromStorage(message[1]);
@@ -309,7 +319,7 @@ async function handlePopupOperation(message) {
     return response;
   } else if (message[0] === "writeToStorage") {
     await mutexWrapper(async () => {
-      await writeToStorage(message[1], message[2]);
+      message[2] = await writeToStorage(message[1], message[2]);
       if (popup_port != undefined && message[1] == "history") {
         popup_port.postMessage({
           operation: "updateHistory",
