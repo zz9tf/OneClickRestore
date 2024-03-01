@@ -9,3 +9,10 @@ This tool help you tracking any tab or window you close, and they will be shown 
 [x] Closed tabs and windows in current mode.
 [x] Focus on any tab or window in current mode.
 
+Known issues:
+There are some unfix issues with Mac system:
+[x] Unsupported switching active tab
+
+
+## Privacy Policy
+(link)[]
