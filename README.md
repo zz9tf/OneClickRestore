@@ -15,4 +15,4 @@ There are some unfix issues with Mac system:
 
 
 ## Privacy Policy
-(link)[]
+[link](https://github.com/zz9tf/OneClickRestore/blob/main/Privacy%20policy.md)
