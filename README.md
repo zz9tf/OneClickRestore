@@ -1,18 +1,24 @@
-# History Manager
-Get problems about opening too many urls? Here, this History Manager comes to help!
+# History Manager Chrome Extension
 
-This tool help you tracking any tab or window you close, and they will be shown in history mode later. You can easily click them to restore them. In addtional, current mode shows all tabs you are opening which are grouped by windows. You can immedietely focus on any tab by click it in current mode.
+Are you encountering issues with opening too many URLs? Introducing **History Manager** to the rescue!
 
-📰FEATURED
-[x] Tracking closed tabs and windows
-[x] Easily restore tabs and windows by one click.
-[x] Closed tabs and windows in current mode.
-[x] Focus on any tab or window in current mode.
+This tool aids you in tracking any tabs or windows you close, storing them in a convenient history mode for later retrieval. With a simple click, you can effortlessly restore closed tabs and windows. Additionally, the current mode displays all tabs you currently have open, neatly grouped by windows, allowing you to focus on any tab with just a click.
 
-Known issues:
-There are some unfix issues with Mac system:
-[x] Unsupported switching active tab
+## 📰 Featured
 
+- [x] **Tracking Closed Tabs and Windows**: Keep track of tabs and windows you close.
+- [x] **Easy Restoration**: Restore closed tabs and windows with a single click.
+- [x] **Current Mode**: View all tabs currently open, organized by windows.
+- [x] **Focused Navigation**: Quickly focus on any tab or window in current mode.
+
+## Known Issues
+
+There are some unresolved issues specific to Mac systems:
+
+- [x] **Unsupported Active Tab Switching**
 
 ## Privacy Policy
-[link](https://github.com/zz9tf/OneClickRestore/blob/main/Privacy%20policy.md)
+
+For our privacy policy, please refer to the following link: [Privacy Policy](link)
+
+Feel free to explore and enjoy the seamless tab and window management provided by History Manager!
