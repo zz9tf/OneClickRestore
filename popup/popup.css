@@ -172,9 +172,19 @@ div.window-date {
   opacity: 1;
 }
 
-div.window-icon {
+div.window-restore-icon {
   margin-right: 5px;
   padding: 2px;
+}
+
+div.window-pin-icon {
+  margin-left: 7px;
+  padding: 2px;
+  opacity: 0.3;
+}
+
+div.window-pin-icon.active {
+  opacity: 1;
 }
 
 ul.window-tabs {

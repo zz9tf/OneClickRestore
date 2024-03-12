@@ -139,7 +139,8 @@ async function mutexWrapper(callback) {
  *        history = [
  *           {
  *              date: when the urls are closed,
- *              urls: dataAddToHistory
+ *              urls: dataAddToHistory,
+ *              pin: boolean
  *           }...
  *        ];
  * 
@@ -166,7 +167,7 @@ async function updateData(dataAddToHistory, urls, windowId2TabId) {
   if (history == null) {
     history = [];
   }
-  history.push({ date: new Date().toString(), urls: dataAddToHistory });
+  history.push({ date: new Date().toString(), urls: dataAddToHistory, pin: false });
   history = await writeToStorage("history", history);
 
   // Update my recording
