@@ -13,6 +13,9 @@ This tool aids you in tracking any tabs or windows you close, storing them in a 
 
 ## Known Issues
 
+- [x] **Can be slow when open too much tabs at once (restore more than 10 tabs in one window)**
+- [x] **Vedio automatically play when restore**
+      
 There are some unresolved issues specific to Mac systems:
 
 - [x] **Unsupported Active Tab Switching**
