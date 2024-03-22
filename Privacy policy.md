@@ -32,6 +32,6 @@ History Manager reserves the right to update or modify this Privacy Policy at an
 
 ### Contact Us
 
-If you have any questions or concerns about this Privacy Policy or the practices of History Manager, please contact us at Zheng_5732021823@outlook.com.
+If you have any questions or concerns about this Privacy Policy or the practices of History Manager, please contact us at zz9tf.firstforce@gmail.com.
 
 This Privacy Policy was last updated on Feb 29, 2024.
