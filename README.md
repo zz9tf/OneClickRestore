@@ -1,4 +1,4 @@
-# History Manager Chrome Extension
+# Tabs Manager Chrome Extension
 
 Are you encountering issues with opening too many URLs? Introducing **Tabs Manager** to the rescue!
 
@@ -24,4 +24,4 @@ There are some unresolved issues specific to Mac systems:
 
 For our privacy policy, please refer to the following link: [Privacy Policy](https://github.com/zz9tf/OneClickRestore/blob/main/Privacy%20policy.md)
 
-Feel free to explore and enjoy the seamless tab and window management provided by History Manager!
+Feel free to explore and enjoy the seamless tab and window management provided by Tabs Manager!
