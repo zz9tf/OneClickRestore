@@ -19,6 +19,6 @@ There are some unresolved issues specific to Mac systems:
 
 ## Privacy Policy
 
-For our privacy policy, please refer to the following link: [Privacy Policy](link)
+For our privacy policy, please refer to the following link: [Privacy Policy](https://github.com/zz9tf/OneClickRestore/blob/main/Privacy%20policy.md)
 
 Feel free to explore and enjoy the seamless tab and window management provided by History Manager!
